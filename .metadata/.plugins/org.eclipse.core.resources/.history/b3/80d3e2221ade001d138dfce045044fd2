@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="00037336-b8f9-4def-998d-89dc6075aa6e" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="ubuntuFlow" doc:id="1aeb9527-fd70-46df-a2e4-d80597dd0c25" >
+		<http:listener doc:name="Listener" doc:id="bf18858e-169a-4f3a-9604-cc892b55c126" config-ref="HTTP_Listener_config" path="/mule" allowedMethods="GET"/>
+		<logger level="INFO" doc:name="Logger" doc:id="2adca32c-1580-40ac-a695-aadff90c3baf" message='Mule Started'/>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="1785500c-81a3-4e5d-8f01-2467df5ee92f" />
+		<logger level="INFO" doc:name="Logger1" doc:id="91f50bcf-ff88-4570-8282-bfd6ca857554" message="Mule Ended"/>
+	</flow>
+</mule>
