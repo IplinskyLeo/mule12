@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="8bb34249-d280-437e-bb3e-5b7f0ddf5e47" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="69100dca-1767-45d4-bc80-d46678d06f85" >
+		<http:request-connection host="api.nasa.gov" protocol="HTTPS" port="443" maxConnections="1"/>
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration1" doc:name="HTTP Request configuration" doc:id="88b3edd0-6f73-4641-a9d8-280524b4711f" >
+		<http:request-connection host="localhost" port="8081" />
+	</http:request-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="8ecd76eb-2cf0-42b3-b4c1-ffc8a88ad8cb" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="3712" database="mulesoft"/>
+	</db:config>
+	<flow name="apodFlow" doc:id="8c93bb58-4cc9-4172-96bd-e52dbb27a4d1" tracking:enable-default-events="true">
+		<http:listener doc:name="Listener" doc:id="56aa8c77-7890-4534-af4a-32dc9aef5bcd" path="/apod/{dataP}" config-ref="HTTP_Listener_config" allowedMethods="GET"/>
+		<set-variable value='#[attributes.uriParams."dataP"]' doc:name="Set Variable" doc:id="3c49dabe-6997-488b-950a-8563b63da5cd" variableName="dataP"/>
+		<logger level="ERROR" doc:name="Logger" doc:id="a95819d2-0c83-4ed3-b360-22ef99303531" message='#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{&#10;	"Fluxo iniciado - data: ": vars.dataP&#10;}]'/>
+		<http:request method="GET" doc:name="Request" doc:id="bc8c3c57-daac-4cd7-aebb-855d39781a13" config-ref="HTTP_Request_configuration" path="/planetary/apod" sendCorrelationId="NEVER" target="payload1">
+			<http:query-params ><![CDATA[#[output application/json
+--- 
+{ 
+	date : vars.dataP, 
+	api_key : "CjVFMAWfrGwcFcS82Vr8hDOTTKyyxO0xRa9OmaiV"
+}]]]></http:query-params>
+		</http:request>
+		<set-payload value="#[vars.payload1]" doc:name="Set Payload" doc:id="87021e51-ebc0-438e-a86c-58bb1645a104" />
+		<logger level="INFO" doc:name="Logger" doc:id="944f7f62-20b5-40f6-b19f-5ad6e2acae62" message="Requisição realizada"/>
+		<http:request method="POST" doc:name="Request" doc:id="5762bebb-2a96-4059-9653-06965e00d4cf" config-ref="HTTP_Request_configuration1" path="/db" responseTimeout="99999999">
+			<http:body ><![CDATA[#[vars.payload1]]]></http:body>
+		</http:request>
+	</flow>
+	<flow name="InsertSQL" doc:id="c215a4c1-82f0-4293-ba3f-35b34603b11a" >
+		<http:listener doc:name="HTTP GET" doc:id="609f4351-237b-4234-bc9b-870afba14d5e" config-ref="HTTP_Listener_config" path="/db" allowedMethods="POST"/>
+		<logger level="INFO" doc:name="Logger Init" doc:id="1e8e4095-49f6-4a13-8b04-9c560f7f472e" message="Requisição com o Banco de Dados iniciada"/>
+		<logger level="INFO" doc:name="Logger" doc:id="288fccd5-0e6e-4b42-8f3b-0ad7e9fb426b" message="#[payload]"/>
+<!-- [STUDIO:"Set Payload"]		<set-payload value='#[%dw 2.0&#10;&#10;var ipy = "99/99/9999"&#10;&#10;output application/json&#10;&#45;&#45;-&#10;&#10;ipy]' doc:name="Set Payload" doc:id="fec736c1-a305-45ac-a7cf-8966c4abcb63" /> [STUDIO] -->
+		<db:insert doc:name="INSERT INTO nasa" doc:id="c4bbd09d-abaa-4ebb-a572-24f69256a905" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO apod
+(`date`, `explanation`, `media_type`, `service_version`, `title`, `url`) 
+VALUES 
+('2023-04-19', 'banana', 'video', 'azul', 'titulo', 'localhost');
+]]></db:sql>
+		</db:insert>
+		<logger level="INFO" doc:name="Logger End" doc:id="21af24e6-2025-4360-a6d4-035e6d9bfb88" message="Requisição com o Banco de Dados concluida com sucesso!" />
+	</flow>
+</mule>
